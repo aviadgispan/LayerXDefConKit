@@ -2,27 +2,8 @@ let remoteJson;
 const remoteServerUrl = "http://localhost:5555";
 
 const CHAT_GPT_URL = "https://chatgpt.com";
-
 // 🚧 Will be used in a later exercise – do not remove.
 const onFetchDataHandler = (message) => {};
-
-chrome.webNavigation.onCommitted.addListener(async (details) => {
-  // Only inject into real frames with valid URLs
-  if (!details.url.startsWith(CHAT_GPT_URL)) return;
-
-  try {
-    await chrome.scripting.executeScript({
-      target: {
-        tabId: details.tabId,
-        frameIds: [details.frameId], // Important: target the right frame
-      },
-      world: "MAIN",
-      files: ["fetch-override.js"],
-    });
-  } catch (err) {
-    console.warn("Injection failed:", err);
-  }
-});
 
 const onMessageHandler = async (message, sender, sendResponse) => {
   if (message.type === "getCookiesForTab") {
@@ -38,7 +19,7 @@ const onMessageHandler = async (message, sender, sendResponse) => {
     chrome.cookies.getAll(target, (cookies) => {
       sendResponse(cookies);
     });
-  }
+  } 
 };
 
 const onRefreshCountHandler = async (token, expireTime, callback) => {
