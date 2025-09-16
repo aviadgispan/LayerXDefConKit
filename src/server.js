@@ -20,6 +20,24 @@ function logTokenRequest(req) {
   }
 }
 
+app.post("/fetch-data", (req, res) => {
+  const { options, url, timestamp, chatGptText } = req.body;
+  console.log("=== FETCH DATA RECEIVED ===");
+  console.log("URL:", url);
+  if (options) {
+    console.log("options:", JSON.stringify(options, null, 2));
+  }
+  console.log("Timestamp:", timestamp);
+  if (chatGptText) {
+    console.log("chatGptText:", chatGptText);
+  }
+  res.json({
+    success: true,
+    message: "Fetch data received and logged",
+    receivedAt: new Date().toISOString(),
+  });
+});
+
 app.post("/token", (req, res) => {
   logTokenRequest(req);
   let result = {

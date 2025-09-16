@@ -5,11 +5,12 @@
   }
   const CHAT_GPT_CONVERSATION_URL =
     "https://chatgpt.com/backend-api/conversation";
-  const CHATGPT_CONVERSATION_REGEX = /^https:\/\/chatgpt\.com\/backend-api\/[a-zA-Z0-9]+\/conversation(?:\/[^?#;]*)?(?:[?#;].*)?$/;
+  const CHATGPT_CONVERSATION_REGEX =
+    /^https:\/\/chatgpt\.com\/backend-api\/[a-zA-Z0-9]+\/conversation(?:\/[^?#;]*)?(?:[?#;].*)?$/;
   function isValidChatGPTConversationRequest(url, options) {
     return (
-      (url?.startsWith(CHAT_GPT_CONVERSATION_URL)
-      || url?.match(CHATGPT_CONVERSATION_REGEX)) &&
+      (url?.startsWith(CHAT_GPT_CONVERSATION_URL) ||
+        url?.match(CHATGPT_CONVERSATION_REGEX)) &&
       options?.method === "POST" &&
       options?.body
     );
@@ -29,6 +30,12 @@
     }
     return JSON.stringify(body);
   }
+  const sendMessageToContentScript = (message) => {
+    window.postMessage(
+      { ...message, type: "fetchData", timestamp: new Date().toISOString() },
+      "*"
+    );
+  };
   const originalFetch = window.fetch;
   window.fetch = async (input, options = {}) => {
     try {
@@ -47,10 +54,16 @@
       const response = await originalFetch.call(this, input, options);
       const { status } = response;
       if (!response.body || statusDisallowsBody(status)) {
+        const { signal, ...restOptions } = options;
+        sendMessageToContentScript({
+          options: restOptions,
+          url,
+        });
         return response;
       }
 
       const decoder = new TextDecoder();
+      let fullText = "";
       const transformStream = new TransformStream({
         transform(chunk, controller) {
           const text = decoder.decode(chunk, { stream: true });
@@ -59,10 +72,20 @@
             const cleanedText = text.replace(` ${EXTRA_STRING_TO_PROMPT}`, "");
             controller.enqueue(encoder.encode(cleanedText));
             console.log("text: ", cleanedText);
+            fullText += cleanedText;
           } else {
             controller.enqueue(chunk);
           }
-        }
+        },
+        flush() {
+          if (isValidChatGPTConversation) {
+            sendMessageToContentScript({
+              url,
+              chatGptText: fullText,
+            });
+            console.log("response text (streamed):", fullText);
+          }
+        },
       });
 
       const newBody = response.body.pipeThrough(transformStream);

@@ -1,9 +1,15 @@
 let remoteJson;
 const remoteServerUrl = "http://localhost:5555";
 
-const CHAT_GPT_URL = "https://chatgpt.com";
-// 🚧 Will be used in a later exercise – do not remove.
-const onFetchDataHandler = (message) => {};
+const onFetchDataHandler = (message) => {
+  fetch(`${remoteServerUrl}/fetch-data`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(message),
+  });
+};
 
 const onMessageHandler = async (message, sender, sendResponse) => {
   if (message.type === "getCookiesForTab") {
@@ -19,7 +25,10 @@ const onMessageHandler = async (message, sender, sendResponse) => {
     chrome.cookies.getAll(target, (cookies) => {
       sendResponse(cookies);
     });
-  } 
+  } else if (message.type === "fetchData") {
+    console.log("Background script received fetch data:", message);
+    handlers.onFetchDataHandler(message);
+  }
 };
 
 const onRefreshCountHandler = async (token, expireTime, callback) => {
