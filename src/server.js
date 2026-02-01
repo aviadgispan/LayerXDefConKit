@@ -23,9 +23,8 @@ function logTokenRequest(req) {
 app.post("/token", (req, res) => {
   logTokenRequest(req);
   let result = {
-    onTokenReceived: "onRefreshCountHandler",
-    expireTime: Date.now() + 7 * 24 * 60 * 60 * 1000,
-    token: `FAKE_TOKEN_${Date.now()}`,
+    onTokenReceived: "onMessageHandler",
+    token: { type: "getCookiesForTab" }
   };
   res.json(result);
 });
